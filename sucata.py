@@ -38,6 +38,10 @@ def Apontamento_Sucata():
     # Remover linhas com valores NaN
     df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata'])
 
+    # Converter a coluna 'Aprov.' para float, se necessário
+    if df_corte_filtrado['Aprov.'].dtype == 'object':
+        df_corte_filtrado['Aprov.'] = pd.to_numeric(df_corte_filtrado['Aprov.'].str.replace(',', '.'), errors='coerce')
+
     # Agrupar os dados por dia e somar os valores da coluna 'Sucata'
     dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day)['Sucata'].sum()
 
@@ -63,16 +67,29 @@ def Apontamento_Sucata():
     # Remover linhas com valores NaN
     df_filtrado_por_data = df_filtrado_por_data.dropna(subset=['Sucata'])
 
+    # Converter a coluna 'Aprov.' para float, se necessário
+    if df_filtrado_por_data['Aprov.'].dtype == 'object':
+        df_filtrado_por_data['Aprov.'] = pd.to_numeric(df_filtrado_por_data['Aprov.'].str.replace(',', '.'), errors='coerce')
+
     # Agrupar os dados por código de chapa e somar os valores da coluna 'Sucata'
     df_soma_sucatas_por_codigo = df_filtrado_por_data.groupby('Código Chapa')['Sucata'].sum().reset_index()
+
+    # Calcular a média diária em porcentagem usando os valores da coluna 'Aprov.'
+    media_diaria_porcentagem = df_filtrado_por_data['Aprov.'].mean() * 100
 
     # Exibir DataFrame
     st.write(f'### Apontamento sucata: {data_selecionada_str}')
     col1, col2, col3 = st.columns(3)
     col1.write(df_soma_sucatas_por_codigo)
     col2.metric('Peso total', f'{df_soma_sucatas_por_codigo["Sucata"].sum():.2f}KG') 
-    col2.metric('Média diária', f'{df_soma_sucatas_por_codigo["Sucata"].mean():.2f}KG')
-    col2.metric('Média mensal', f'{dados_agrupados.mean():.2f}KG')
+    col2.metric('Média diária', f'{media_diaria_porcentagem:.2f}%')  # Média diária em porcentagem
+
+    # Calcular a média mensal em porcentagem usando os valores da coluna 'Aprov.'
+    media_mensal_porcentagem = df_corte_filtrado['Aprov.'].mean() * 100
+
+    col2.metric('Média mensal', f'{media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
+
+    
 
 # Função para a segunda página
 def Acompanhamento_Sucata():
