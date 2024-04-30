@@ -5,16 +5,16 @@ from oauth2client.service_account import ServiceAccountCredentials
 import locale
 from locale import LC_NUMERIC
 
-st.set_page_config(
-    layout='wide',
-    page_title='PCP CEMAG',
-)
-
 # Defina o locale para interpretar corretamente os formatos numéricos
 try:
     locale.setlocale(LC_NUMERIC, '')
 except locale.Error as e:
     print("Erro ao definir o locale:", e)
+
+st.set_page_config(
+    layout='wide',
+    page_title='PCP CEMAG',
+)
 
 # Autenticação e acesso à planilha
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -129,16 +129,30 @@ def Acompanhamento_Sucata():
             # Remover linhas com valores NaN
             df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata'])
 
-            # Agrupar os dados por dia e somar os valores da coluna 'Sucata'
-            dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day)['Sucata'].sum()
+            # Converter a coluna 'Aprov.' para float, tratando valores não numéricos como NaN
+            df_corte_filtrado['Aprov.'] = pd.to_numeric(df_corte_filtrado['Aprov.'].str.replace(',', '.'), errors='coerce')
 
-            # Exibir o título com o mês atual
-            st.title(f'Acompanhamento Sucata - {meses_dict[mes]}')
+            # Remover linhas com valores NaN após a conversão
+            df_corte_filtrado = df_corte_filtrado.dropna(subset=['Aprov.'])
 
-            # Personalizar o gráfico de barras para o mês atual
-            st.bar_chart(dados_agrupados, color='#ffaa00', use_container_width=True)
+            # Se houver dados suficientes para calcular a média de aproveitamento
+            if not df_corte_filtrado.empty:
+                # Calcular a média de aproveitamento para o mês atual
+                media_aproveitamento = df_corte_filtrado['Aprov.'].mean() * 100
+
+                # Agrupar os dados por dia e somar os valores da coluna 'Sucata'
+                dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day)['Sucata'].sum()
+
+                # Exibir o título com o mês atual e a média de aproveitamento
+                st.title(f'Acompanhamento Sucata - {meses_dict[mes]}')
+                st.write(f'Média de aproveitamento: {media_aproveitamento:.2f}%')
+
+                # Personalizar o gráfico de barras para o mês atual
+                st.bar_chart(dados_agrupados, color='#ffaa00', use_container_width=True)
         except KeyError:
             pass  # Ignora o erro KeyError e continua o loop
+
+
 
 # Função principal
 def main():
