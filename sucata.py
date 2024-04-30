@@ -5,6 +5,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 import locale
 from locale import LC_NUMERIC
 
+st.set_page_config(
+    layout='wide',
+    page_title='PCP CEMAG',
+)
+
 # Defina o locale para interpretar corretamente os formatos numéricos
 try:
     locale.setlocale(LC_NUMERIC, '')
