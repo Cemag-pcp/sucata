@@ -20,9 +20,17 @@ st.set_page_config(
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
 client = gspread.authorize(creds)
-planilha1 = client.open('CENTRAL CORTE CHAPAS')
 
-planilha_worksheet1 = planilha1.get_worksheet(4)
+# ID do documento do Google Sheets
+document_id = '1t7Q_gwGVAEwNlwgWpLRVy-QbQo7kQ_l6QTjFjBrbWxE'
+
+# Acesse o documento pelo ID
+planilha1 = client.open_by_key(document_id)
+
+# Busque a aba pelo nome
+nome_da_aba = 'RQ PCP-003-000 (Transferencia)'
+planilha_worksheet1 = planilha1.worksheet(nome_da_aba)
+
 dados_corte = planilha_worksheet1.get_all_values()
 df_corte = pd.DataFrame(dados_corte[5:], columns=dados_corte[4])
 
