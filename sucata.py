@@ -111,7 +111,7 @@ def Apontamento_Sucata():
     col1.write(df_soma_sucatas_por_codigo)
     col2.metric('Peso total', f'{df_filtrado_por_data["Sucata"].sum():.2f}KG') 
     col2.metric('Média de sucata diária', f'{100 - media_diaria_porcentagem:.2f}%')  # Média diária em porcentagem
-    col2.metric('Média média de sucata mensal', f'{100 - media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
+    col2.metric('Média de sucata mensal', f'{100 - media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
 
 # Função para a segunda página
 def Acompanhamento_Sucata():
