@@ -66,8 +66,8 @@ def Apontamento_Sucata():
 
     # Criar o gráfico de barras com a linha de 92%
     chart = alt.Chart(dados_agrupados).mark_bar(color='#ffaa00').encode(
-        x=alt.X('Data:O', title='Dia'),
-        y=alt.Y('Aproveitamento:Q', title='Aproveitamento (%)')
+    x=alt.X('Data:O', title='Dia', axis=alt.Axis(labelAngle=45)),
+    y=alt.Y('Aproveitamento:Q', title='Aproveitamento (%)'),
     ) + alt.Chart(pd.DataFrame({'y': [92]})).mark_rule(color='red').encode(y='y:Q')
 
     # Exibir o gráfico
