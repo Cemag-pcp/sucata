@@ -266,7 +266,7 @@ def Acompanhamento_Por_Chapa():
 
             # Criar o gráfico de barras com a linha de 92%
             chart = alt.Chart(dados_agrupados).mark_bar(color='#ffaa00').encode(
-                x=alt.X('Código Chapa:O', title='Código da Chapa', axis=alt.Axis(labelAngle=0)),
+                x=alt.X('Código Chapa:O', title='Código da Chapa', axis=alt.Axis(labelAngle = 45)),
                 y=alt.Y('Aproveitamento:Q', title='Aproveitamento (%)')
             ) + alt.Chart(pd.DataFrame({'y': [92]})).mark_rule(color='red').encode(y='y:Q')
 
