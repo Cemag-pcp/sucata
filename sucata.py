@@ -62,7 +62,7 @@ def Apontamento_Sucata():
     dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day)['Aproveitamento'].mean().reset_index()
 
     # Exibir o título
-    st.title('Acompanhamento Sucata')
+    st.title('Aproveitamento')
 
     # Criar o gráfico de barras com a linha de 92%
     chart = alt.Chart(dados_agrupados).mark_bar(color='#ffaa00').encode(
@@ -196,9 +196,9 @@ def Acompanhamento_Sucata():
 
                 # Exibir o título com o mês atual e a média de aproveitamento
                 if chapa_selecionada:
-                    st.title(f'Acompanhamento Sucata - {meses_dict[mes]} - Chapa {chapa_selecionada}')
+                    st.title(f'Aproveitamento - {meses_dict[mes]} - Chapa {chapa_selecionada}')
                 else:
-                    st.title(f'Acompanhamento Sucata - {meses_dict[mes]}')
+                    st.title(f'Aproveitamento - {meses_dict[mes]}')
 
                 if filtrar_por_data:
                     st.write(f'Filtrado de {data_inicio} até {data_fim}')
@@ -278,12 +278,12 @@ def Acompanhamento_Por_Chapa():
 # Função principal
 def main():
     # Adicione um seletor de páginas na barra lateral
-    page = st.sidebar.selectbox("Escolha uma página", ["Apontamento Sucata", "Acompanhamento Sucata", "Acompanhamento por Chapa"])
+    page = st.sidebar.selectbox("Escolha uma página", ["Apontamento Sucata", "Aproveitamento", "Acompanhamento por Chapa"])
 
     # Exiba a página selecionada
     if page == "Apontamento Sucata":
         Apontamento_Sucata()
-    elif page == "Acompanhamento Sucata":
+    elif page == "Aproveitamento":
         Acompanhamento_Sucata()
     elif page == "Acompanhamento por Chapa":
         Acompanhamento_Por_Chapa()
