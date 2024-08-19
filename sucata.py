@@ -98,7 +98,7 @@ def Apontamento_Sucata():
 
     # Agrupar os dados por código de chapa e calcular a média da porcentagem de aproveitamento
     df_soma_sucatas_por_codigo = df_filtrado_por_data.groupby('Código Chapa')['Aproveitamento'].mean().reset_index()
-    # df_soma_sucatas_por_codigo['PESO'] = df_filtrado_por_data.groupby('Código Chapa')['Sucata'].sum().values
+    
 
     # Calcular a média diária em porcentagem usando os valores da coluna 'Aprov.'
     media_diaria_porcentagem = df_filtrado_por_data['Aprov.'].mean() * 100
