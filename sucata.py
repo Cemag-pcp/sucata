@@ -98,6 +98,7 @@ def Apontamento_Sucata():
 
     # Agrupar os dados por código de chapa e calcular a média da porcentagem de aproveitamento
     df_soma_sucatas_por_codigo = df_filtrado_por_data.groupby('Código Chapa')['Aproveitamento'].mean().reset_index()
+    # df_soma_sucatas_por_codigo['PESO'] = df_filtrado_por_data.groupby('Código Chapa')['Sucata'].sum().values
 
     # Calcular a média diária em porcentagem usando os valores da coluna 'Aprov.'
     media_diaria_porcentagem = df_filtrado_por_data['Aprov.'].mean() * 100
@@ -235,7 +236,7 @@ def Acompanhamento_Por_Chapa():
     }
 
     # Obter todos os meses disponíveis no DataFrame
-    meses_disponiveis = df_corte['Data'].dt.month.unique()
+    meses_disponiveis = df_corte['Data'].dt.month.unique()  
 
     # Exibir um gráfico para cada mês
     for mes in meses_disponiveis:
@@ -288,5 +289,5 @@ def main():
     elif page == "Acompanhamento por Chapa":
         Acompanhamento_Por_Chapa()
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     main()
