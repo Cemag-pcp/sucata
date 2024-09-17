@@ -4,6 +4,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import locale
 import altair as alt
+from utils import *
 
 # Defina o locale para interpretar corretamente os formatos numéricos
 try:
@@ -16,10 +17,8 @@ st.set_page_config(
     page_title='PCP CEMAG',
 )
 
-# Autenticação e acesso à planilha
-scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-client = gspread.authorize(creds)
+# Connect to Google Sheets
+client = connect_google_sheet()
 
 # ID do documento do Google Sheets
 document_id = '1t7Q_gwGVAEwNlwgWpLRVy-QbQo7kQ_l6QTjFjBrbWxE'
