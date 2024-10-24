@@ -6,6 +6,7 @@ import locale
 import altair as alt
 from utils import *
 
+
 # Defina o locale para interpretar corretamente os formatos numéricos
 try:
     locale.setlocale(locale.LC_NUMERIC, '')
@@ -17,7 +18,7 @@ st.set_page_config(
     page_title='PCP CEMAG',
 )
 
-# Connect to Google Sheets
+# Autenticação e acesso à planilha
 client = connect_google_sheet()
 
 # ID do documento do Google Sheets
@@ -44,30 +45,39 @@ def Apontamento_Sucata():
     # Filtrar os dados para exibir apenas os do mês atual
     df_corte_filtrado = df_corte[df_corte['Data'].dt.month == mes_atual]
 
-    # Converter a coluna 'Sucata' para float
+    # Converter as colunas 'Sucata' e 'Peso' para float
     df_corte_filtrado['Sucata'] = pd.to_numeric(df_corte_filtrado['Sucata'].str.replace(',', '.'), errors='coerce')
+    df_corte_filtrado['Peso'] = pd.to_numeric(df_corte_filtrado['Peso'].str.replace(',', '.'), errors='coerce')
 
     # Remover linhas com valores NaN
-    df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata'])
+    df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata', 'Peso'])
 
     # Converter a coluna 'Aprov.' para float, se necessário
     if df_corte_filtrado['Aprov.'].dtype == 'object':
         df_corte_filtrado['Aprov.'] = pd.to_numeric(df_corte_filtrado['Aprov.'].str.replace(',', '.'), errors='coerce')
 
-    # Calcular a porcentagem de aproveitamento
-    df_corte_filtrado['Aproveitamento'] = df_corte_filtrado['Aprov.'] * 100
+    # Remover linhas com valores NaN na coluna 'Aprov.'
+    df_corte_filtrado = df_corte_filtrado.dropna(subset=['Aprov.'])
 
-    # Agrupar os dados por dia e calcular a média da porcentagem de aproveitamento
-    dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day)['Aproveitamento'].mean().reset_index()
+    # *Cálculo de Perda: (Sucata / Peso) * 100*
+    if 'Peso' not in df_corte_filtrado.columns or 'Sucata' not in df_corte_filtrado.columns:
+        st.error("A coluna 'Peso' ou 'Sucata' não foi encontrada no DataFrame.")
+        return
 
-    # Exibir o título
-    st.title('Aproveitamento')
+    # Agrupar por dia e calcular as somas
+    dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day).agg({
+        'Sucata': 'sum',
+        'Peso': 'sum'
+    }).reset_index()
 
-    # Criar o gráfico de barras com a linha de 92%
-    chart = alt.Chart(dados_agrupados).mark_bar(color='#ffaa00').encode(
-    x=alt.X('Data:O', title='Dia', axis=alt.Axis(labelAngle=0)),
-    y=alt.Y('Aproveitamento:Q', title='Aproveitamento (%)'),
-    ) + alt.Chart(pd.DataFrame({'y': [92]})).mark_rule(color='red').encode(y='y:Q')
+    # Calcular a perda (sucata / peso)
+    dados_agrupados['Perda'] = (dados_agrupados['Sucata'] / dados_agrupados['Peso']) * 100
+    st.title(f'Sucata')
+    # Criar o gráfico de barras com a linha fixa em 8,5% e o limite do gráfico em 20%
+    chart = alt.Chart(dados_agrupados).mark_bar(color='#de3502').encode(
+        x=alt.X('Data:O', title='Dia', axis=alt.Axis(labelAngle=0)),
+        y=alt.Y('Perda:Q', title='Perda (%)', scale=alt.Scale(domain=[0, 20]))  # Limite do gráfico para 20%
+    ) + alt.Chart(pd.DataFrame({'y': [8.5]})).mark_rule(color='white').encode(y='y:Q')  # Linha de 8,5% fixa
 
     # Exibir o gráfico
     st.altair_chart(chart, use_container_width=True)
@@ -82,39 +92,50 @@ def Apontamento_Sucata():
     # Filtrar os dados com base na data selecionada
     df_filtrado_por_data = df_corte[df_corte['Data'].dt.strftime('%d/%m/%Y') == data_selecionada_str]
 
-    # Converter a coluna 'Sucata' para float no DataFrame filtrado por data
+    # Converter as colunas 'Sucata' e 'Peso' para float no DataFrame filtrado por data
     df_filtrado_por_data['Sucata'] = pd.to_numeric(df_filtrado_por_data['Sucata'].str.replace(',', '.'), errors='coerce')
+    df_filtrado_por_data['Peso'] = pd.to_numeric(df_filtrado_por_data['Peso'].str.replace(',', '.'), errors='coerce')
 
     # Remover linhas com valores NaN
-    df_filtrado_por_data = df_filtrado_por_data.dropna(subset=['Sucata'])
+    df_filtrado_por_data = df_filtrado_por_data.dropna(subset=['Sucata', 'Peso'])
 
     # Converter a coluna 'Aprov.' para float, se necessário
     if df_filtrado_por_data['Aprov.'].dtype == 'object':
         df_filtrado_por_data['Aprov.'] = pd.to_numeric(df_filtrado_por_data['Aprov.'].str.replace(',', '.'), errors='coerce')
 
-    # Calcular a porcentagem de aproveitamento
-    df_filtrado_por_data['Aproveitamento'] = df_filtrado_por_data['Aprov.'] * 100
+    # Remover linhas com valores NaN na coluna 'Aprov.'
+    df_filtrado_por_data = df_filtrado_por_data.dropna(subset=['Aprov.'])
 
-    # Agrupar os dados por código de chapa e calcular a média da porcentagem de aproveitamento
-    df_soma_sucatas_por_codigo = df_filtrado_por_data.groupby('Código Chapa')['Aproveitamento'].mean().reset_index()
-    df_soma_sucatas_por_codigo['Peso'] = df_filtrado_por_data.groupby('Código Chapa')['Sucata'].sum().values
-    df_soma_sucatas_por_codigo = df_soma_sucatas_por_codigo[['Código Chapa','Peso','Aproveitamento']]
+    # *Cálculo de Perda no Filtro por Data (Sucata / Peso) * 100*
+    if 'Peso' not in df_filtrado_por_data.columns or 'Sucata' not in df_filtrado_por_data.columns:
+        st.error("A coluna 'Peso' ou 'Sucata' não foi encontrada no DataFrame filtrado por data.")
+        return
+
+    # Agrupar por Código Chapa e calcular as somas
+    df_soma_sucatas_por_codigo = df_filtrado_por_data.groupby('Código Chapa').agg({
+        'Sucata': 'sum',
+        'Peso': 'sum'
+    }).reset_index()
+
+    # Calcular a perda
+    df_soma_sucatas_por_codigo['Perda'] = (df_soma_sucatas_por_codigo['Sucata'] / df_soma_sucatas_por_codigo['Peso']) * 100
+
+    # Selecionar as colunas desejadas e substituir 'Peso' por 'Sucata'
+    df_soma_sucatas_por_codigo = df_soma_sucatas_por_codigo[['Código Chapa', 'Sucata', 'Perda']]
+
+    # Calcular a média diária em porcentagem usando os valores da coluna 'Perda'
+    media_diaria_porcentagem = (df_filtrado_por_data['Sucata'].sum() / df_filtrado_por_data['Peso'].sum()) * 100
+
+    # Calcular a média mensal em porcentagem usando os valores da coluna 'Perda'
+    media_mensal_porcentagem = (df_corte_filtrado['Sucata'].sum() / df_corte_filtrado['Peso'].sum()) * 100
     
-
-    # Calcular a média diária em porcentagem usando os valores da coluna 'Aprov.'
-    media_diaria_porcentagem = df_filtrado_por_data['Aprov.'].mean() * 100
-
-    # Calcular a média mensal em porcentagem usando os valores da coluna 'Aprov.'
-    media_mensal_porcentagem = df_corte_filtrado['Aprov.'].mean() * 100
-    
-
-    # Exibir DataFrame
+    # Exibir DataFrame com 'Sucata' no lugar de 'Peso'
     st.write(f'### Apontamento sucata: {data_selecionada_str}')
     col1, col2, col3 = st.columns(3)
     col1.write(df_soma_sucatas_por_codigo)
-    col2.metric('Peso total', f'{df_filtrado_por_data["Sucata"].sum():.2f}KG') 
-    col2.metric('Média de sucata diária', f'{100 - media_diaria_porcentagem:.2f}%')  # Média diária em porcentagem
-    col2.metric('Média de sucata mensal', f'{100 - media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
+    col2.metric('Sucata total', f'{df_filtrado_por_data["Sucata"].sum():.2f} KG') 
+    col2.metric('Média de sucata diária', f'{media_diaria_porcentagem:.2f}%')  # Média diária em porcentagem
+    col2.metric('Média de sucata mensal', f'{media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
 
 # Função para a segunda página
 def Acompanhamento_Sucata():
@@ -174,11 +195,12 @@ def Acompanhamento_Sucata():
                     (df_corte_filtrado['Data'] <= pd.to_datetime(data_fim))
                 ]
 
-            # Converter a coluna 'Sucata' para float
+            # Converter as colunas 'Sucata' e 'Peso' para float
             df_corte_filtrado['Sucata'] = pd.to_numeric(df_corte_filtrado['Sucata'].str.replace(',', '.'), errors='coerce')
+            df_corte_filtrado['Peso'] = pd.to_numeric(df_corte_filtrado['Peso'].str.replace(',', '.'), errors='coerce')
 
             # Remover linhas com valores NaN
-            df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata'])
+            df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata', 'Peso'])
 
             # Converter a coluna 'Aprov.' para float, tratando valores não numéricos como NaN
             df_corte_filtrado['Aprov.'] = pd.to_numeric(df_corte_filtrado['Aprov.'].str.replace(',', '.'), errors='coerce')
@@ -186,38 +208,45 @@ def Acompanhamento_Sucata():
             # Remover linhas com valores NaN após a conversão
             df_corte_filtrado = df_corte_filtrado.dropna(subset=['Aprov.'])
 
-            # Calcular a porcentagem de aproveitamento
-            df_corte_filtrado['Aproveitamento'] = df_corte_filtrado['Aprov.'] * 100
+            # *Cálculo de Perda: (Sucata / Peso) * 100*
+            if 'Peso' not in df_corte_filtrado.columns or 'Sucata' not in df_corte_filtrado.columns:
+                st.error(f"A coluna 'Peso' ou 'Sucata' não foi encontrada no DataFrame para o mês {meses_dict[mes]}.")
+                continue
 
-            # Se houver dados suficientes para calcular a média de aproveitamento
-            if not df_corte_filtrado.empty:
-                # Calcular a média de aproveitamento para o mês atual
-                media_aproveitamento = df_corte_filtrado['Aprov.'].mean() * 100
+            # Agrupar por dia e calcular as somas
+            dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day).agg({
+                'Sucata': 'sum',
+                'Peso': 'sum'
+            }).reset_index()
 
-                # Agrupar os dados por dia e calcular a média da porcentagem de aproveitamento
-                dados_agrupados = df_corte_filtrado.groupby(df_corte_filtrado['Data'].dt.day)['Aproveitamento'].mean().reset_index()
+            # Calcular a perda (sucata / peso)
+            dados_agrupados['Perda'] = (dados_agrupados['Sucata'] / dados_agrupados['Peso']) * 100
 
-                # Exibir o título com o mês atual e a média de aproveitamento
-                if chapa_selecionada:
-                    st.title(f'Aproveitamento - {meses_dict[mes]} - Chapa {chapa_selecionada}')
-                else:
-                    st.title(f'Aproveitamento - {meses_dict[mes]}')
+            # Calcular a Média de sucata para o mês atual
+            media_perda = (df_corte_filtrado['Sucata'].sum() / df_corte_filtrado['Peso'].sum()) * 100
 
-                if filtrar_por_data:
-                    st.write(f'Filtrado de {data_inicio} até {data_fim}')
+            # Exibir o título com o mês atual e a Média de sucata
+            if chapa_selecionada:
+                st.title(f'Perda - {meses_dict[mes]} - Chapa {chapa_selecionada}')
+            else:
+                st.title(f'Perda - {meses_dict[mes]}')
 
-                st.write(f'Média de aproveitamento: {media_aproveitamento:.2f}%')
+            if filtrar_por_data:
+                st.write(f'Filtrado de {data_inicio} até {data_fim}')
 
-                # Criar o gráfico de barras com a linha de 92%
-                chart = alt.Chart(dados_agrupados).mark_bar(color='#ffaa00').encode(
-                    x=alt.X('Data:O', title='Dia', axis=alt.Axis(labelAngle=0)),
-                    y=alt.Y('Aproveitamento:Q', title='Aproveitamento (%)')
-                ) + alt.Chart(pd.DataFrame({'y': [92]})).mark_rule(color='red').encode(y='y:Q')
+            st.write(f'Média de sucata: {media_perda:.2f}%')
 
-                # Exibir o gráfico
-                st.altair_chart(chart, use_container_width=True)
-        except KeyError:
-            pass  # Ignora o erro KeyError e continua o loop
+            # Criar o gráfico de barras com a linha fixa em 8,5% e o limite do gráfico em 20%
+            chart = alt.Chart(dados_agrupados).mark_bar(color='#de3502').encode(
+                x=alt.X('Data:O', title='Dia', axis=alt.Axis(labelAngle=0)),
+                y=alt.Y('Perda:Q', title='Perda (%)', scale=alt.Scale(domain=[0, 20]))  # Limite do gráfico para 20%
+            ) + alt.Chart(pd.DataFrame({'y': [8.5]})).mark_rule(color='white').encode(y='y:Q')  # Linha de 8,5% fixa
+
+            # Exibir o gráfico
+            st.altair_chart(chart, use_container_width=True)
+        except KeyError as e:
+            st.warning(f"Ocorreu um erro ao processar o mês {meses_dict.get(mes, mes)}: {e}")
+            continue  # Ignora o erro KeyError e continua o loop
 
 # Função para acompanhamento detalhado por chapa (histórico mensal)
 def Acompanhamento_Por_Chapa():
@@ -238,7 +267,7 @@ def Acompanhamento_Por_Chapa():
     }
 
     # Obter todos os meses disponíveis no DataFrame
-    meses_disponiveis = df_corte['Data'].dt.month.unique()  
+    meses_disponiveis = df_corte['Data'].dt.month.unique()
 
     # Exibir um gráfico para cada mês
     for mes in meses_disponiveis:
@@ -246,47 +275,59 @@ def Acompanhamento_Por_Chapa():
             # Filtrar os dados para o mês atual
             df_corte_filtrado = df_corte[df_corte['Data'].dt.month == mes]
 
-            # Converter a coluna 'Sucata' para float
+            # Converter as colunas 'Sucata' e 'Peso' para float
             df_corte_filtrado['Sucata'] = pd.to_numeric(df_corte_filtrado['Sucata'].str.replace(',', '.'), errors='coerce')
-            df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata'])
+            df_corte_filtrado['Peso'] = pd.to_numeric(df_corte_filtrado['Peso'].str.replace(',', '.'), errors='coerce')
+
+            # Remover linhas com valores NaN
+            df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata', 'Peso'])
 
             # Converter a coluna 'Aprov.' para float, tratando valores não numéricos como NaN
             df_corte_filtrado['Aprov.'] = pd.to_numeric(df_corte_filtrado['Aprov.'].str.replace(',', '.'), errors='coerce')
             df_corte_filtrado = df_corte_filtrado.dropna(subset=['Aprov.'])
 
-            # Calcular a porcentagem de aproveitamento
-            df_corte_filtrado['Aproveitamento'] = df_corte_filtrado['Aprov.'] * 100
+            # *Cálculo de Perda: (Sucata / Peso) * 100*
+            if 'Peso' not in df_corte_filtrado.columns or 'Sucata' not in df_corte_filtrado.columns:
+                st.error(f"A coluna 'Peso' ou 'Sucata' não foi encontrada no DataFrame para o mês {meses_dict[mes]}.")
+                continue
 
-            # Agrupar os dados por chapa e calcular a média da porcentagem de aproveitamento
-            dados_agrupados = df_corte_filtrado.groupby('Código Chapa')['Aproveitamento'].mean().reset_index()
+            # Agrupar por Chapa e calcular as somas
+            dados_agrupados = df_corte_filtrado.groupby('Código Chapa').agg({
+                'Sucata': 'sum',
+                'Peso': 'sum'
+            }).reset_index()
 
-            # Calcular a média de aproveitamento para o mês
-            media_aproveitamento_mes = df_corte_filtrado['Aproveitamento'].mean()
+            # Calcular a perda (sucata / peso)
+            dados_agrupados['Perda'] = (dados_agrupados['Sucata'] / dados_agrupados['Peso']) * 100
 
-            # Exibir o título com o mês atual e a média de aproveitamento
+            # Calcular a Média de sucata para o mês
+            media_perda_mes = (df_corte_filtrado['Sucata'].sum() / df_corte_filtrado['Peso'].sum()) * 100
+
+            # Exibir o título com o mês atual e a Média de sucata
             st.title(f'Acompanhamento por Chapa - {meses_dict[mes]}')
-            st.write(f'Média de aproveitamento: {media_aproveitamento_mes:.2f}%')
+            st.write(f'Média de sucata: {media_perda_mes:.2f}%')
 
-            # Criar o gráfico de barras com a linha de 92%
-            chart = alt.Chart(dados_agrupados).mark_bar(color='#ffaa00').encode(
-                x=alt.X('Código Chapa:O', title='Código da Chapa', axis=alt.Axis(labelAngle = -80)),
-                y=alt.Y('Aproveitamento:Q', title='Aproveitamento (%)')
-            ) + alt.Chart(pd.DataFrame({'y': [92]})).mark_rule(color='red').encode(y='y:Q')
+            # Criar o gráfico de barras com a linha fixa em 8,5% e o limite do gráfico em 20%
+            chart = alt.Chart(dados_agrupados).mark_bar(color='#de3502').encode(
+                x=alt.X('Código Chapa:O', title='Código da Chapa', axis=alt.Axis(labelAngle=-80)),
+                y=alt.Y('Perda:Q', title='Perda (%)', scale=alt.Scale(domain=[0, 50]))  # Limite do gráfico para 20%
+            ) + alt.Chart(pd.DataFrame({'y': [8.5]})).mark_rule(color='white').encode(y='y:Q')  # Linha de 8,5% fixa
 
             # Exibir o gráfico
             st.altair_chart(chart, use_container_width=True)
-        except KeyError:
-            pass  # Ignora o erro KeyError e continua o loop
+        except KeyError as e:
+            st.warning(f"Ocorreu um erro ao processar o mês {meses_dict.get(mes, mes)}: {e}")
+            continue  # Ignora o erro KeyError e continua o loop
 
 # Função principal
 def main():
     # Adicione um seletor de páginas na barra lateral
-    page = st.sidebar.selectbox("Escolha uma página", ["Apontamento Sucata", "Aproveitamento", "Acompanhamento por Chapa"])
+    page = st.sidebar.selectbox("Escolha uma página", ["Apontamento Sucata", "Perda", "Acompanhamento por Chapa"])
 
     # Exiba a página selecionada
     if page == "Apontamento Sucata":
         Apontamento_Sucata()
-    elif page == "Aproveitamento":
+    elif page == "Perda":
         Acompanhamento_Sucata()
     elif page == "Acompanhamento por Chapa":
         Acompanhamento_Por_Chapa()
