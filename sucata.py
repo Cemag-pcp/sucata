@@ -28,7 +28,7 @@ document_id = '1t7Q_gwGVAEwNlwgWpLRVy-QbQo7kQ_l6QTjFjBrbWxE'
 planilha1 = client.open_by_key(document_id)
 
 # Busque a aba pelo nome
-nome_da_aba = 'RQ PCP-003-000 (Transferencia)'
+nome_da_aba = 'RQ PCP-003-000 (Transferencia Corte)'
 planilha_worksheet1 = planilha1.worksheet(nome_da_aba)
 
 dados_corte = planilha_worksheet1.get_all_values()
