@@ -134,6 +134,7 @@ def Apontamento_Sucata():
     col1, col2, col3 = st.columns(3)
     col1.write(df_soma_sucatas_por_codigo)
     col2.metric('Sucata total', f'{df_soma_sucatas_por_codigo["Sucata"].sum():.2f} KG')
+
     col2.metric('Média de sucata diária', f'{media_diaria_porcentagem:.2f}%')  # Média diária em porcentagem
     col2.metric('Média de sucata mensal', f'{media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
 
