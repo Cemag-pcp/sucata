@@ -121,7 +121,7 @@ def Apontamento_Sucata():
     df_soma_sucatas_por_codigo['Perda'] = (df_soma_sucatas_por_codigo['Sucata'] / df_soma_sucatas_por_codigo['Peso']) * 100
 
     # Selecionar as colunas desejadas e substituir 'Peso' por 'Sucata'
-    df_soma_sucatas_por_codigo = df_soma_sucatas_por_codigo[['Código Chapa', 'Sucata', 'Perda']]
+    df_soma_sucatas_por_codigo = df_soma_sucatas_por_codigo[['Código Chapa', 'Sucata', 'Peso', 'Perda']]
 
     # Calcular a média diária em porcentagem usando os valores da coluna 'Perda'
     media_diaria_porcentagem = (df_soma_sucatas_por_codigo['Sucata'].sum() / df_soma_sucatas_por_codigo['Peso'].sum()) * 100
