@@ -124,7 +124,7 @@ def Apontamento_Sucata():
     df_soma_sucatas_por_codigo = df_soma_sucatas_por_codigo[['Código Chapa', 'Sucata', 'Perda']]
 
     # Calcular a média diária em porcentagem usando os valores da coluna 'Perda'
-    media_diaria_porcentagem = (df_filtrado_por_data['Sucata'].sum() / df_filtrado_por_data['Peso'].sum()) * 100
+    media_diaria_porcentagem = (['Sucata'].sum() / ['Peso'].sum()) * 100
 
     # Calcular a média mensal em porcentagem usando os valores da coluna 'Perda'
     media_mensal_porcentagem = (df_corte_filtrado['Sucata'].sum() / df_corte_filtrado['Peso'].sum()) * 100
@@ -133,7 +133,7 @@ def Apontamento_Sucata():
     st.write(f'### Apontamento sucata: {data_selecionada_str}')
     col1, col2, col3 = st.columns(3)
     col1.write(df_soma_sucatas_por_codigo)
-    col2.metric('Sucata total', f'{df_filtrado_por_data["Sucata"].sum():.2f} KG') 
+    col2.metric('Sucata total', f'{df_soma_sucatas_por_codigo["Sucata"].sum():.2f} KG')
     col2.metric('Média de sucata diária', f'{media_diaria_porcentagem:.2f}%')  # Média diária em porcentagem
     col2.metric('Média de sucata mensal', f'{media_mensal_porcentagem:.2f}%')  # Média mensal em porcentagem
 
