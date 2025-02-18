@@ -1,10 +1,10 @@
-import streamlit as st
-import pandas as pd
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import locale
-import altair as alt
-from utils import *
+    import streamlit as st
+    import pandas as pd
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+    import locale
+    import altair as alt
+    from utils import *
     
     
     # Defina o locale para interpretar corretamente os formatos numéricos
