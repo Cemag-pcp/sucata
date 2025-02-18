@@ -5,7 +5,7 @@
     import locale
     import altair as alt
     from utils import *
-    
+
     
     # Defina o locale para interpretar corretamente os formatos numéricos
     try:
