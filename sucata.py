@@ -26,14 +26,7 @@ dados_corte = planilha_worksheet1.get_all_values()
 df_corte = pd.DataFrame(dados_corte[5:], columns=dados_corte[4])
 
 # Converter a coluna 'Data' para datetime
-df_corte['Data'] = pd.to_datetime(df_corte['Data'], format='%d/%m/%Y')
-
-# Dicionário de meses
-meses_dict = {
-    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
-    5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
-    9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
-}
+df_corte['Data'] = pd.to_datetime(df_corte['Data'], format='%d/%m/%Y', errors='coerce')
 
 # Função para converter colunas numéricas
 def converter_colunas(df, colunas):
@@ -71,6 +64,29 @@ def Apontamento_Sucata():
     dados_agrupados = calcular_perda(dados_agrupados)
 
     gerar_grafico(dados_agrupados, 'Data', 'Perda', 'Sucata')
+
+    # Sidebar para filtro por data
+    st.sidebar.title('Filtrar por Data')
+    data_selecionada = st.sidebar.date_input('Selecione uma data', value=pd.Timestamp.now())
+
+    # Filtrar por data
+    df_data_filtrada = df_corte[df_corte['Data'].dt.strftime('%d/%m/%Y') == data_selecionada.strftime('%d/%m/%Y')]
+    df_data_filtrada = converter_colunas(df_data_filtrada, ['Sucata', 'Peso'])
+    df_data_filtrada = calcular_perda(df_data_filtrada)
+
+    # Agrupar por código chapa
+    df_agrupado_chapa = df_data_filtrada.groupby('Código Chapa').agg({'Sucata': 'sum', 'Peso': 'sum'}).reset_index()
+    df_agrupado_chapa = calcular_perda(df_agrupado_chapa)
+
+    # Exibir tabela
+    st.write(f'### Apontamento sucata: {data_selecionada.strftime("%d/%m/%Y")}')
+    st.dataframe(df_agrupado_chapa)
+
+    # Exibir métricas
+    col1, col2, col3 = st.columns(3)
+    col1.metric('Sucata total', f'{df_agrupado_chapa["Sucata"].sum():.2f} KG')
+    col2.metric('Média de sucata diária', f'{df_agrupado_chapa["Perda"].mean():.2f}%')
+    col3.metric('Média de sucata mensal', f'{df_filtrado["Perda"].mean():.2f}%')
 
 # Função para acompanhamento de perda mensal
 def Acompanhamento_Sucata():
