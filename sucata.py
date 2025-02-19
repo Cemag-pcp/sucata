@@ -90,16 +90,38 @@ def Apontamento_Sucata():
 
 # Função para acompanhamento de perda mensal
 def Acompanhamento_Sucata():
+    # Obter todos os meses disponíveis no DataFrame
     meses_disponiveis = df_corte['Data'].dt.month.unique()
-    for mes in meses_disponiveis:
-        df_filtrado = filtrar_por_mes(df_corte, mes)
-        df_filtrado = converter_colunas(df_filtrado, ['Sucata', 'Peso'])
-        df_filtrado = calcular_perda(df_filtrado)
 
-        dados_agrupados = df_filtrado.groupby(df_filtrado['Data'].dt.day).agg({'Sucata': 'sum', 'Peso': 'sum'}).reset_index()
-        dados_agrupados = calcular_perda(dados_agrupados)
+    # Sidebar para selecionar um mês específico
+    st.sidebar.title("Filtrar por Mês")
+    mes_selecionado = st.sidebar.selectbox("Selecione um mês", [meses_dict[m] for m in sorted(meses_disponiveis)])
 
-        gerar_grafico(dados_agrupados, 'Data', 'Perda', f'Perda - {meses_dict[mes]}')
+    # Converter nome do mês para número
+    mes_numero = {v: k for k, v in meses_dict.items()}[mes_selecionado]
+
+    # Filtrar os dados para o mês selecionado
+    df_filtrado = filtrar_por_mes(df_corte, mes_numero)
+    df_filtrado = converter_colunas(df_filtrado, ['Sucata', 'Peso'])
+    df_filtrado = calcular_perda(df_filtrado)
+
+    # Agrupar por dia e calcular as somas
+    dados_agrupados = df_filtrado.groupby(df_filtrado['Data'].dt.day).agg({
+        'Sucata': 'sum',
+        'Peso': 'sum'
+    }).reset_index()
+
+    dados_agrupados = calcular_perda(dados_agrupados)
+
+    # Calcular a média de perda do mês
+    media_perda_mes = df_filtrado["Perda"].mean()
+
+    # Exibir o título e a média da perda
+    st.title(f"Perda - {mes_selecionado}")
+    st.write(f"Média de perda do mês: **{media_perda_mes:.2f}%**")
+
+    # Gerar gráfico
+    gerar_grafico(dados_agrupados, 'Data', 'Perda', f'Perda - {mes_selecionado}')
 
 # Função para acompanhamento detalhado por chapa
 def Acompanhamento_Por_Chapa():
