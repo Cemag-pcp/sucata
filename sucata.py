@@ -47,7 +47,7 @@ def Apontamento_Sucata():
 
     # Converter as colunas 'Sucata' e 'Peso' para float
     df_corte_filtrado['Sucata'] = pd.to_numeric(df_corte_filtrado['Sucata'].str.replace(',', '.'), errors='coerce')
-    df_corte_filtrado['Peso'] = pd.to_numeric(df_corte_filtrado['Peso'].str.replace(',', '.'), errors='coerce')
+    #df_corte_filtrado['Peso'] = pd.to_numeric(df_corte_filtrado['Peso'].str.replace(',', '.'), errors='coerce')
 
     # Remover linhas com valores NaN
     df_corte_filtrado = df_corte_filtrado.dropna(subset=['Sucata', 'Peso'])
